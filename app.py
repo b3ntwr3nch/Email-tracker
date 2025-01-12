@@ -18,6 +18,9 @@ def get_geolocation(ip):
     except Exception as e:
         return 'Unknown'
 
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
 @app.route('/track', methods=['GET'])
 def track():
     ip = request.remote_addr
