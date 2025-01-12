@@ -10,11 +10,13 @@ logging.basicConfig(filename='tracking.log', level=logging.INFO, format='%(ascti
 
 def get_geolocation(ip):
     """Fetch geolocation data based on the user's IP address using an external API."""
+    if ip == "127.0.0.1":
+        return "Localhost (Development)"
     try:
         response = requests.get(f'http://ip-api.com/json/{ip}')
         if response.status_code == 200:
             data = response.json()
-            return f"{data['city']}, {data['regionName']}, {data['country']}, ISP: {data['isp']}"
+            return f"{data.get('city', 'Unknown')}, {data.get('regionName', 'Unknown')}, {data.get('country', 'Unknown')}, ISP: {data.get('isp', 'Unknown')}"
     except Exception as e:
         return 'Unknown'
 
@@ -23,32 +25,43 @@ def favicon():
     return '', 204
 @app.route('/track', methods=['GET'])
 def track():
-    ip = request.remote_addr
-    user_agent = request.headers.get('User-Agent')
-    referrer = request.referrer
-    language = request.headers.get('Accept-Language')
-    encoding = request.headers.get('Accept-Encoding')
-    timestamp = datetime.now().isoformat()
+    try:
+        # Basic Request Details
+        ip = request.remote_addr or 'Unknown'
+        user_agent = request.headers.get('User-Agent', 'Unknown')
+        referrer = request.referrer or 'Unknown'
+        language = request.headers.get('Accept-Language', 'Unknown')
+        encoding = request.headers.get('Accept-Encoding', 'Unknown')
+        timestamp = datetime.now().isoformat()
 
-    geolocation = get_geolocation(ip)
+        # Geolocation
+        geolocation = get_geolocation(ip)
 
-    parsed_ua = parse(user_agent)
-    browser = parsed_ua.browser.family
-    browser_version = parsed_ua.browser.version_string
-    os = parsed_ua.os.family
-    os_version = parsed_ua.os.version_string
-    device = parsed_ua.device.family
+        # Parse User-Agent
+        parsed_ua = parse(user_agent)
+        browser = parsed_ua.browser.family or 'Unknown'
+        browser_version = parsed_ua.browser.version_string or 'Unknown'
+        os = parsed_ua.os.family or 'Unknown'
+        os_version = parsed_ua.os.version_string or 'Unknown'
+        device = parsed_ua.device.family or 'Unknown'
 
-    screen_size = request.args.get('screen', 'Unknown')
-    timezone = request.args.get('timezone', 'Unknown')
+        # Query Parameters
+        screen_size = request.args.get('screen', 'Unknown')
+        timezone = request.args.get('timezone', 'Unknown')
 
-    logging.info(
-        f"IP: {ip}, Browser: {browser} {browser_version}, OS: {os} {os_version}, Device: {device}, "
-        f"User-Agent: {user_agent}, Referrer: {referrer}, Language: {language}, Encoding: {encoding}, "
-        f"Geolocation: {geolocation}, Screen Size: {screen_size}, Timezone: {timezone}, Timestamp: {timestamp}"
-    )
+        # Log the Collected Information
+        logging.info(
+            f"IP: {ip}, Browser: {browser} {browser_version}, OS: {os} {os_version}, Device: {device}, "
+            f"User-Agent: {user_agent}, Referrer: {referrer}, Language: {language}, Encoding: {encoding}, "
+            f"Geolocation: {geolocation}, Screen Size: {screen_size}, Timezone: {timezone}, Timestamp: {timestamp}"
+        )
 
-    return render_template("pixel.html"), 200
+        # Return a Tracking Pixel
+        return render_template("pixel.html"), 200
+
+    except Exception as e:
+        logging.error(f"Error in /track: {e}")
+        return "Internal Server Error", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
