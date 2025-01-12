@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+        const screenSize = `${screenWidth}x${screenHeight}`;
+
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        fetch(`/track?screen=${screenSize}&timezone=${timeZone}`, { method: 'GET' });
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const geoData = `${position.coords.latitude},${position.coords.longitude}`;
+                fetch(`/track?geo=${geoData}`, { method: 'GET' });
+            });
+        }
+    </script>
+</head>
+<body>
+    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAUEBA==" width="1" height="1" alt="tracking pixel">
+</body>
+</html>
